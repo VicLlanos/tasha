@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cheerleader Nutrition Game</title>
+    <style>
+       @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+
+body {
+    font-family: 'Poppins', sans-serif;
+    text-align: center;
+    background-color: #f0f2f5;
+    margin: 0;
+}
+
+.game-container {
+    width: 90%;
+    max-width: 500px;
+    margin: auto;
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    margin-top: 50px;
+}
+
+img {
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+}
+
+.button-container button {
+    padding: 12px;
+    margin: 10px;
+    border: none;
+    font-size: 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 100%;
+    transition: 0.3s;
+}
+
+.healthy { 
+    background-color: #28a745; 
+    color: white; 
+}
+.unhealthy { 
+    background-color: #dc3545; 
+    color: white; 
+}
+
+#popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    width: 80%;
+    max-width: 400px;
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    opacity: 0;
+    transition: 0.3s ease-in-out;
+    visibility: hidden;
+}
+
+#popup.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.correct {
+    color: green;
+    font-weight: bold;
+}
+
+.wrong {
+    color: red;
+    font-weight: bold;
+}
+
+#summary p {
+    font-size: 16px;
+    text-align: left;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .game-container {
+        padding: 15px;
+    }
+
+    img {
+        max-width: 100%;
+        border-radius: 8px;
+    }
+
+    .button-container button {
+        font-size: 16px;
+        padding: 10px;
+    }
+
+    #popup {
+        width: 90%;
+        max-width: 350px;
+    }
+
+    #summary {
+        padding: 15px;
+        width: 90%;
+        margin: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        font-size: 14px;
+    }
+
+    .game-container {
+        margin-top: 30px;
+    }
+
+    .button-container button {
+        font-size: 14px;
+        padding: 8px;
+    }
+
+    #popup {
+        width: 90%;
+        max-width: 300px;
+        padding: 15px;
+    }
+
+    #summary {
+        font-size: 14px;
+    }
+
+    h1 {
+        font-size: 18px;
+    }
+}
+
+    </style>
+</head>
+<body>
+
+        <div class="game-container" id="name-input-container">
+        <h1>Enter Your Name</h1>
+        <div class="input-container">
+            <input type="text" id="player-name" placeholder="Your Name">
+            <button onclick="startGame()">Start</button>
+        </div>
+    </div>
+
+    <div id="popup">
+    <h2>Result</h2>
+    <p id="popup-text"></p>
+    <button onclick="restartGame()">Restart</button>
+</div>
+
+    <div class="game-container" id="game-container" style="display: none;">
+        <h1>Cheerleader Nutrition Game</h1>
+        <h2 id="player-display"></h2>
+        <h2 id="lives">❤️ Lives: 3</h2>
+        <h2 id="score">⭐ Score: 0</h2>
+
+        <img id="food-image" src="" alt="Food Image">
+
+        <div class="button-container">
+            <button class="healthy" onclick="checkAnswer(true)">Healthy</button>
+            <button class="unhealthy" onclick="checkAnswer(false)">Unhealthy</button>
+        </div>
+    </div>
+
+    <div id="summary" style="display: none;">
+        <h2>Game Summary</h2>
+        <p id="summary-text"></p>
+        <button onclick="restartGame()">Restart</button>
+    </div>
+
+    <script>
+        const foods = [
+            { name: "Salad", img: "salad.jpg", isHealthy: true, info: "Salads provide essential vitamins and hydration, helping cheerleaders stay energetic." },
+            { name: "Pizza", img: "pizza.jpg", isHealthy: false, info: "Pizza has excess fat and refined carbs, which can slow down performance." },
+            { name: "Fruits", img: "fruits.jpg", isHealthy: true, info: "Fruits are rich in antioxidants and natural sugars, providing quick and sustained energy." },
+            { name: "Soda", img: "soda.jpg", isHealthy: false, info: "Soda is loaded with sugar, causing energy crashes that affect stamina." },
+            { name: "Chicken", img: "chicken.jpg", isHealthy: true, info: "Lean protein like grilled chicken supports muscle recovery and strength." },
+            { name: "Burger", img: "burger.jpg", isHealthy: false, info: "High-fat foods like burgers can make cheerleaders feel sluggish." }
+        ];
+
+        let playerName = "";
+let score = 0;
+let lives = 3;
+let currentFoodIndex = 0;
+let answers = [];
+
+        function startGame() {
+            playerName = document.getElementById("player-name").value || "Player";
+            alert(`Welcome, ${playerName}! The game will start now.`);
+            document.getElementById("player-display").textContent = `👤 ${playerName}`;
+            document.getElementById("name-input-container").style.display = "none";
+            document.getElementById("game-container").style.display = "block";
+            loadFood();
+        }
+
+        function loadFood() {
+            if (lives <= 0 || currentFoodIndex >= foods.length) return showSummary();
+            document.getElementById("food-image").src = foods[currentFoodIndex].img;
+        }
+
+       function checkAnswer(playerChoice) {
+    let food = foods[currentFoodIndex];
+    let correctChoice = food.isHealthy;
+    let result = playerChoice === correctChoice ? "Correct" : "Wrong";
+
+    if (playerChoice === correctChoice) {
+        score++;
+        showPopup(`${result}! ${food.info}`, true);  // Correct answer
+    } else {
+        lives--;
+        document.getElementById("lives").textContent = `❤️ Lives: ${lives}`;
+        showPopup(`${result}! ${food.info}`, false); // Incorrect answer
+    }
+
+    answers.push(`${food.name}: ${result} - ${food.info}`);
+    document.getElementById("score").textContent = `⭐ Score: ${score}`;
+    currentFoodIndex++;
+}
+
+
+
+        function showPopup(message, isCorrect) {
+    let popupText = document.getElementById("popup-text");
+    popupText.textContent = message;
+
+    // Apply the correct class based on whether the answer is correct or wrong
+    if (isCorrect) {
+        popupText.className = "correct"; // Green for correct
+    } else {
+        popupText.className = "wrong"; // Red for wrong
+    }
+
+    document.getElementById("popup").classList.add("show");
+}
+
+
+        function closePopup() {
+            document.getElementById("popup").classList.remove("show");
+            loadFood();
+        }
+
+       function showSummary() {
+    // Generate the summary with food names, not image filenames
+    let summaryText = `<strong>${playerName}'s Score: ${score}</strong><br><br>` + answers.join("<br>");
+    document.getElementById("popup-text").innerHTML = summaryText;
+    document.getElementById("popup").classList.add("show");
+}
+function loadFood() {
+    if (lives <= 0 || currentFoodIndex >= foods.length) return showSummary();
+    document.getElementById("food-image").src = foods[currentFoodIndex].img;
+}
+
+
+
+        function restartGame() {
+    // Reset the game variables
+    score = 0;
+    lives = 3;
+    currentFoodIndex = 0;
+    answers = [];
+    document.getElementById("score").textContent = `⭐ Score: ${score}`;
+    document.getElementById("lives").textContent = `❤️ Lives: ${lives}`;
+
+    // Hide the summary popup and show the game container
+    document.getElementById("popup").classList.remove("show");
+    document.getElementById("summary").classList.remove("show");
+    document.getElementById("game-container").style.display = "block";
+
+    // Reload the game
+    loadFood();
+}
+    </script>
+</body>
+</html>
